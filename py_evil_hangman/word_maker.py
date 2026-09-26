@@ -74,29 +74,30 @@ class WordMakerAI():
         # Feel free to use this parameter to toggle extra print statments. Verbose mode can be turned on via the --verbose flag.
         self.verbose = verbose
 
-        # Use this code if you like.
-        """
+        self.words_by_length = defaultdict(set)
+
         with open(words_file) as file_obj:
             for line in file_obj:
                 word = line.strip()
-                # Use word
-        """
-
-        pass # TODO: implement this
+                if word:
+                    self.words_by_length[len(word)].add(word)
 
     def reset(self, word_length: int) -> None:
         # This function starts a new game with a word length of `word_length`. This will always be called before guess() or get_valid_word() are called.
         # You should try to make this function should be O(1). That is, you shouldn't have to process over the entire dictionary here (find somewhere else to preprocess it)
         # Your AI code should not call input() or print().
 
-        pass # TODO: implement this
-
+        # Return a copy of the set of words of length `word_length`
+        self.valid_words = self.words_by_length[word_length].copy()
+        return self.valid_words
+    
     def get_valid_word(self) -> str:
         # Get a valid word in the active dictionary, to return when you lose
         # Can return any word, as long as it satisfies the previous guesses
-
-        pass # TODO: implement this
-
+    
+        # Return one of the remaining valid words
+        return next(iter(self.valid_words))
+    
     def get_amount_of_valid_words(self) -> int:
         # This function gets the total amount of possible words "remaining" (i.e., that satisfy all the guesses since self.reset was last called)
         # This should also be O(1)
@@ -104,7 +105,8 @@ class WordMakerAI():
         # via the provided test cases.
         # You can see this number by running with the verbose flag, i.e. `python3 evil_hangman.py --verbose`
 
-        pass # TODO: implement this
+        # Return the number of remaining valid words
+        return len(self.valid_words)
 
     def get_letter_positions_in_word(self, word: str, guess_letter: str) -> tuple[int, ...]:
         # This function should return the positions of guess_letter in word. For instance:
@@ -113,10 +115,8 @@ class WordMakerAI():
         # You can assume that word is lowercase with at least length 1 and guess_letter has exactly length 1 and is a lowercase a-z letter.
 
         # Note: to convert from a list to a tuple, call tuple() on the list. For instance:
-        result = []
-        # TODO: add letter positions to result
+        result = [i for i, char in enumerate(word) if char == guess_letter]
         return tuple(result)
-        
 
     def guess(self, guess_letter) -> list[int]:
         # This is the meat of the project. This function is called by the GameManager.
@@ -143,4 +143,18 @@ class WordMakerAI():
         # The order of the returned list should be sorted. You can assume that 'guess_letter' has not been seen yet since the last call to self.reset(),
         #  and that guess_letter has len of 1 and is a lowercase a-z letter.
         
-        pass # TODO: implement this
+        # Create a dictionary to hold possible partitions of words based on guessed letter positions
+        partitions = defaultdict(set)
+        
+        # Iterate over remaining valid words
+        for word in self.valid_words:
+            # Get the positions of the guessed letter in the word.
+            key = self.get_letter_positions_in_word(word, guess_letter)
+            # Add the word to the partition corresponding to the key
+            partitions[key].add(word)
+
+        # Choose the partition with the most words
+        largest_key = max(partitions, key=lambda k: (len(partitions[k]), -len(k)))
+        self.valid_words = partitions[largest_key]
+        
+        return sorted(largest_key)

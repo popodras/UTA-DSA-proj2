@@ -88,7 +88,7 @@ class WordMakerAI():
         # Your AI code should not call input() or print().
 
         # Return a copy of the set of words of length `word_length`
-        self.valid_words = self.words_by_length[word_length].copy()
+        self.valid_words = self.words_by_length.get(word_length, set()).copy()
         return self.valid_words
     
     def get_valid_word(self) -> str:
@@ -96,7 +96,7 @@ class WordMakerAI():
         # Can return any word, as long as it satisfies the previous guesses
     
         # Return one of the remaining valid words
-        return next(iter(self.valid_words))
+        return next(iter(self.valid_words), None)
     
     def get_amount_of_valid_words(self) -> int:
         # This function gets the total amount of possible words "remaining" (i.e., that satisfy all the guesses since self.reset was last called)
@@ -145,6 +145,10 @@ class WordMakerAI():
         
         # Create a dictionary to hold possible partitions of words based on guessed letter positions
         partitions = defaultdict(set)
+
+        # No words of this length: nothing to partition
+        if not self.valid_words:
+            return []
         
         # Iterate over remaining valid words
         for word in self.valid_words:
